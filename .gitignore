@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+data/processed/
+data/raw/   
+data/test/
+data/train/
+
+
+*.png
+*.log
+.zen 
+.zenml_artifacts
+checkpoints/

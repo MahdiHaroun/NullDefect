@@ -1,0 +1,65 @@
+# configs/train_classifier.yaml
+# EfficientNet-B4 — defect classification
+# All hyperparameters in one place. No magic numbers in code.
+
+model:
+  name: efficientnet_b4
+  pretrained: true          # load ImageNet weights from timm
+  num_classes: 2            # binary: normal (0) vs defective (1)
+  drop_rate: 0.3            # dropout before final FC layer
+  drop_path_rate: 0.2       # stochastic depth (regularization)
+  freeze_epochs: 2          # freeze backbone for first N epochs, train head only
+                            # then unfreeze everything (fine-tuning)
+
+training:
+  max_epochs: 30
+  learning_rate: 1.0e-4     # initial LR (after warmup)
+  weight_decay: 1.0e-4
+  batch_size: 8             # keep in sync with configs/data.yaml for OOM safety
+  num_workers: 4
+  precision: 16-mixed        # AMP — FP16 where safe, FP32 elsewhere
+  gradient_clip_val: 1.0     # prevents exploding gradients
+
+  # LR scheduler: CLearningRateMonitoosineAnnealingWarmRestarts
+  scheduler:
+    name: cosine_warm_restarts
+    T_0: 10                  # restart every 10 epochs
+    T_mult: 1
+    eta_min: 1.0e-6          # minimum LR at trough of cosine
+
+  # Early stopping
+  early_stopping:
+    monitor: val_auroc       # stop if val AUROC doesn't improve
+    patience: 7
+    mode: max
+    min_delta: 0.001
+
+loss:
+  name: focal
+  alpha: 0.25               # down-weight the easy normal class
+  gamma: 2.0                # focusing parameter — higher = more focus on hard examples
+
+data:
+  image_size: 512
+  use_weighted_sampler: true  # balance normal/defect batches
+
+mlflow:
+  experiment_name: defect_classifier
+  run_tags:
+    model: efficientnet_b4
+    phase: 2
+    dataset: mvtec_ad
+
+checkpointing:
+  monitor: val_auroc
+  mode: max
+  save_top_k: 3             # keep top 3 checkpoints by val_auroc
+  dirpath: checkpoints/classifier/
+
+sagemaker:
+  instance_type: ml.g4dn.xlarge
+  instance_count: 1
+  volume_size_gb: 50
+  max_run_hours: 6
+  use_spot: false           # use on-demand quota to avoid spot quota limit
+  spot_wait_hours: 1

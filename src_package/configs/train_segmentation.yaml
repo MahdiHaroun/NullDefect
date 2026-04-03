@@ -1,0 +1,72 @@
+# configs/train_segmentation.yaml
+# U-Net + EfficientNet-B4 encoder — pixel-level defect segmentation
+
+model:
+  name: unet_efficientnet
+  encoder: efficientnet-b4    # segmentation_models_pytorch (smp) notation
+  encoder_weights: imagenet   # pretrained encoder weights
+  in_channels: 3
+  classes: 1                  # binary segmentation: defect or not
+  activation: null            # no sigmoid here — applied in loss (BCEWithLogitsLoss)
+  freeze_epochs: 2            # freeze encoder first, train decoder only
+
+training:
+  max_epochs: 40              # segmentation needs more epochs than classification
+  learning_rate: 1.0e-4
+  encoder_lr_multiplier: 0.1  # encoder LR = main LR × 0.1
+                              # fine-tune encoder slower than decoder
+  weight_decay: 1.0e-4
+  batch_size: 16              # smaller batch — segmentation uses more GPU memory
+  num_workers: 4
+  precision: 16-mixed
+  gradient_clip_val: 1.0
+
+  scheduler:
+    name: cosine_warm_restarts
+    T_0: 10
+    T_mult: 2
+    eta_min: 1.0e-6
+
+  early_stopping:
+    monitor: val_dice
+    patience: 10
+    mode: max
+    min_delta: 0.001
+
+loss:
+  # Combined loss: BCE handles pixel-wise accuracy, Dice handles overlap quality
+  # Both are needed — BCE alone doesn't optimize for mask overlap directly
+  dice_weight: 0.5
+  bce_weight: 0.5
+  bce_pos_weight: 5.0         # up-weight defective pixels (imbalanced at pixel level)
+
+data:
+  image_size: 512
+  defect_only: true           # only use patches that have ground truth masks
+
+evaluation:
+  metrics:
+    - dice                    # Dice coefficient (mask overlap)
+    - iou                     # Intersection over Union
+    - pixel_auroc             # pixel-level AUROC
+
+mlflow:
+  experiment_name: defect_segmentation
+  run_tags:
+    model: unet_efficientnet_b4
+    phase: 2
+    dataset: mvtec_ad
+
+checkpointing:
+  monitor: val_dice
+  mode: max
+  save_top_k: 3
+  dirpath: checkpoints/segmentation/
+
+sagemaker:
+  instance_type: ml.p3.2xlarge
+  instance_count: 1
+  volume_size_gb: 50
+  max_run_hours: 8
+  use_spot: true
+  spot_wait_hours: 1

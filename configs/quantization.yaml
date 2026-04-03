@@ -1,0 +1,77 @@
+# configs/quantization.yaml
+# All quantization parameters in one place.
+
+models:
+  classifier:
+    checkpoint: "checkpoints/classifier/last.ckpt"
+    train_config: "configs/train_classifier.yaml"
+    output_dir: "checkpoints/quantized/classifier/"
+
+  segmentation:
+    checkpoint: "checkpoints/segmentation/last.ckpt"
+    train_config: "configs/train_segmentation.yaml"
+    output_dir: "checkpoints/quantized/segmentation/"
+
+  # PatchCore: no PTQ/QAT — ONNX export of backbone only
+  anomaly_backbone:
+    output_dir: "checkpoints/quantized/anomaly/"
+
+ptq:
+  # Static PTQ: calibrate quantization scales on a representative dataset.
+  # We use normal (non-defective) images — they represent the baseline distribution.
+  calibration_samples: 512      # number of images for calibration pass
+  backend: "fbgemm"             # fbgemm = x86 CPU (use "qnnpack" for ARM/mobile)
+  # fbgemm is the right choice for SageMaker ml.m5 (Intel Xeon)
+
+qat:
+  # Fine-tune the model with fake-quantization nodes inserted.
+  # Starts from the FP32 checkpoint, not from PTQ.
+  max_epochs: 5
+  learning_rate: 1.0e-5         # very low LR — we're fine-tuning, not training
+  batch_size: 16
+  num_workers: 4
+  backend: "fbgemm"
+
+  # Freeze batch norm during QAT — BN stats are already good from FP32 training
+  freeze_bn: true
+
+onnx:
+  opset_version: 17             # ONNX opset 17 = PyTorch 2.x compatible
+  # Dynamic axes allow variable batch size at inference time
+  dynamic_axes:
+    input:  [0]                 # batch dimension is dynamic
+    output: [0]
+  # Validate that ONNX output matches PyTorch output within this tolerance
+  output_tolerance: 1.0e-4
+
+  # onnxruntime quantization (post-export INT8)
+  ort_quantize: true
+  ort_quant_type: "QInt8"       # QInt8 or QUInt8
+
+  # TensorRT (optional — requires NVIDIA GPU on SageMaker)
+  tensorrt:
+    enabled: false              # set true if using ml.p3 endpoint
+    precision: "fp16"           # fp16 or int8
+
+benchmark:
+  # Benchmark configuration
+  warmup_runs: 20               # throw away first N runs (GPU warmup)
+  benchmark_runs: 200           # number of timed inference runs
+  batch_sizes: [1, 8, 32]       # test at multiple batch sizes
+  image_size: 512
+  device: "cpu"                 # benchmark on CPU (SageMaker ml.m5 target)
+                                # change to "cuda" if benchmarking GPU endpoint
+
+  # Latency percentiles to report
+  percentiles: [50, 95, 99]
+
+output:
+  reports_dir: "reports/quantization/"
+  comparison_json: "reports/quantization/comparison_results.json"
+  comparison_html: "reports/quantization/comparison_report.html"
+
+mlflow:
+  experiment_name: "defect_quantization"
+  run_tags:
+    phase: "4"
+    dataset: "mvtec_ad"

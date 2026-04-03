@@ -1,0 +1,52 @@
+# ── Core — already provided by DLC, skip reinstall ────
+# torch>=2.1.0
+# torchvision>=0.16.0
+pytorch-lightning==2.1.0
+setuptools>=69,<82  # lightning_fabric still imports pkg_resources (removed in setuptools 82+)
+
+# ── CV & Augmentation ─────────────────────────────────
+albumentations>=1.3.1
+opencv-python-headless>=4.8.0
+Pillow>=10.0.0
+
+# ── Anomaly Detection ─────────────────────────────────
+anomalib
+
+# ── Data versioning ───────────────────────────────────
+dvc>=3.30.0
+dvc-s3>=3.0.0          # DVC remote on S3
+
+# ── Experiment tracking ───────────────────────────────
+mlflow>=2.9.0
+wandb>=0.16.0
+
+# ── Data quality ──────────────────────────────────────
+great-expectations>=0.18.0
+
+# ── Data handling ─────────────────────────────────────
+numpy<2.0
+pandas>=2.1.0
+scikit-learn>=1.3.0
+tqdm>=4.66.0
+pyyaml>=6.0.1
+requests>=2.31.0
+
+# ── Serving (Phase 5) ─────────────────────────────────
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# ── Dev ───────────────────────────────────────────────
+pytest>=7.4.0
+ruff>=0.1.0
+ipykernel>=6.26.0
+
+# ── SageMaker ─────────────────────────────────────────
+sagemaker
+sagemaker-train
+sagemaker-core
+boto3
+
+timm>=0.9.0
+
+
+segmentation-models-pytorch 

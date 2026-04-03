@@ -1,0 +1,85 @@
+# configs/data.yaml
+# Single source of truth for all data pipeline parameters.
+# Every script reads from here — no magic numbers in code.
+
+dataset:
+  name: mvtec_ad
+  # All 15 MVTec AD categories
+  categories:
+    - bottle
+    - cable
+    - capsule
+    - carpet
+    - grid
+    - hazelnut
+    - leather
+    - metal_nut
+    - pill
+    - screw
+    - tile
+    - toothbrush
+    - transistor
+    - wood
+    - zipper
+
+  # Download
+  url: "https://www.mvtec.com/company/research/datasets/mvtec-ad/downloads"
+  # MVTec requires manual download — script will guide the user.
+  # Place the extracted folder at data/raw/mvtec/
+  raw_dir: "data/raw/mvtec"
+
+paths:
+  raw_dir: "data/raw/mvtec"
+  processed_dir: "data/processed"
+  patches_dir: "data/processed/patches"
+  splits_dir: "data/processed/splits"
+  metadata_dir: "data/processed/metadata"
+  metadata_csv: "data/processed/metadata/dataset_metadata.csv"
+
+tiling:
+  # Source images are up to 1024×1024.
+  # We tile them into 512×512 patches for training efficiency.
+  patch_size: 512
+  overlap: 64          # overlap between patches to avoid losing edge defects
+  min_defect_ratio: 0.01  # skip patches with < 1% defect pixels (for segmentation)
+
+splits:
+  train: 0.70
+  val:   0.15
+  test:  0.15
+  seed:  42
+  # Split is done at the IMAGE level (not patch level) to prevent data leakage.
+  # All patches from one image go to the same split.
+
+augmentation:
+  train:
+    image_size: 512
+    horizontal_flip_p: 0.5
+    vertical_flip_p:   0.3
+    rotate_limit:      15
+    brightness_limit:  0.2
+    contrast_limit:    0.2
+    # Elastic distort simulates surface deformation — critical for defect realism
+    elastic_alpha:     120
+    elastic_sigma:     6
+    elastic_p:         0.3
+    normalize_mean: [0.485, 0.456, 0.406]   # ImageNet stats (EfficientNet pretrained)
+    normalize_std:  [0.229, 0.224, 0.225]
+
+  val_test:
+    image_size: 512
+    normalize_mean: [0.485, 0.456, 0.406]
+    normalize_std:  [0.229, 0.224, 0.225]
+
+dataloader:
+  batch_size: 8
+  num_workers: 4
+  pin_memory: true
+
+# Class labels
+# Each category has its own defect types. This maps them to integer IDs.
+# "good" (normal) is always label 0.
+label_map:
+  good: 0       # normal — no defect
+  defective: 1  # generic defect flag (used by anomaly detection model)
+  # Fine-grained defect type labels are loaded per-category from MVTec folder names

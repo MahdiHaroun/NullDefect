@@ -1,0 +1,81 @@
+# dvc.yaml
+# DVC pipeline — defines stages, dependencies, and outputs.
+#
+# Each stage declares:
+#   cmd:    the command to run
+#   deps:   inputs (if they change, stage re-runs)
+#   outs:   outputs (DVC tracks and caches these)
+#   params: config values from data.yaml that affect the stage
+#   metrics: JSON files tracked as DVC metrics (comparable across runs)
+#
+# Run the full pipeline: dvc repro
+# Run a single stage:    dvc repro tile
+# Compare metrics:       dvc metrics show
+
+stages:
+
+  # ── Stage 1: Verify dataset exists and has correct structure ───────────────
+  verify:
+    cmd: python src/data/download.py
+    deps:
+      - src/data/download.py
+      - configs/data.yaml
+      - data/raw/mvtec        # must exist before this stage passes
+    params:
+      - configs/data.yaml:
+          - dataset.categories
+          - paths.raw_dir
+
+  # ── Stage 2: Tile high-res images into 512×512 patches ────────────────────
+  tile:
+    cmd: python src/data/tile.py
+    deps:
+      - src/data/tile.py
+      - configs/data.yaml
+      - data/raw/mvtec
+    params:
+      - configs/data.yaml:
+          - tiling.patch_size
+          - tiling.overlap
+          - tiling.min_defect_ratio
+    outs:
+      - data/processed/patches:
+          cache: true         # DVC caches the patches directory in .dvc/cache
+    metrics:
+      - data/processed/metadata/tiling_stats.json:
+          cache: false        # metrics are not cached, always re-readable
+
+  # ── Stage 3: Stratified train/val/test split ───────────────────────────────
+  split:
+    cmd: python src/data/split.py
+    deps:
+      - src/data/split.py
+      - configs/data.yaml
+      - data/processed/patches
+    params:
+      - configs/data.yaml:
+          - splits.train
+          - splits.val
+          - splits.test
+          - splits.seed
+    outs:
+      - data/processed/splits:
+          cache: false        # CSVs are small — no need to cache
+      - data/processed/metadata/dataset_metadata.csv:
+          cache: false
+
+  # ── Stage 4: Data quality validation ──────────────────────────────────────
+  validate:
+    cmd: python src/data/validate.py
+    deps:
+      - src/data/validate.py
+      - configs/data.yaml
+      - data/processed/metadata/dataset_metadata.csv
+      - data/processed/patches
+    params:
+      - configs/data.yaml:
+          - tiling.patch_size
+          - dataset.categories
+    metrics:
+      - data/processed/metadata/validation_report.json:
+          cache: false

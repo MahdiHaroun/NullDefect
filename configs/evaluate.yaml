@@ -1,0 +1,48 @@
+# configs/evaluate.yaml
+# All evaluation parameters in one place.
+
+checkpoints:
+  classifier:   "checkpoints/classifier-epoch=16-val_auroc=0.9226.ckpt"
+  segmentation: "checkpoints/segmenter-epoch=39-val_dice=0.8553.ckpt"
+  anomaly_dir:  "checkpoints/anomaly/"     # one subdir per category
+
+  # S3 fallback — if local checkpoint missing, download from here
+  s3_bucket: "your-bucket-name"            # set via SAGEMAKER_S3_BUCKET env var
+  s3_prefix: "defect-detection/checkpoints"
+
+output:
+  reports_dir:   "reports/"
+  gradcam_dir:   "reports/gradcam/"
+  plots_dir:     "reports/plots/"
+  evidently_dir: "reports/evidently/"
+
+  # How many Grad-CAM images to generate per defect type
+  gradcam_samples_per_class: 4
+
+evaluation:
+  classifier_threshold: 0.5    # probability cutoff for binary prediction
+  segmentation_threshold: 0.5  # pixel-level sigmoid threshold
+
+  # Which MVTec categories to run full evaluation on
+  # Set to null to run all 15
+  categories: null
+
+  batch_size: 16
+  num_workers: 4
+  device: "cuda"               # "cuda" or "cpu"
+
+gradcam:
+  # Target layer for Grad-CAM++ in EfficientNet-B4
+  # "blocks[-1]" = last convolutional block — best spatial resolution
+  target_layer: "blocks[-1]"
+  colormap: "jet"              # heatmap colormap (jet, viridis, plasma)
+  alpha: 0.5                   # heatmap overlay opacity (0=image only, 1=heatmap only)
+  image_size: 512
+
+calibration:
+  n_bins: 15                   # number of bins for reliability diagram
+  strategy: "uniform"          # "uniform" or "quantile" bin spacing
+
+mlflow:
+  experiment_name: "defect_evaluation"
+  log_artifacts: true          # upload plots and reports to MLflow

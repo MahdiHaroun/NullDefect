@@ -1,0 +1,50 @@
+# configs/train_anomaly.yaml
+# PatchCore — anomaly detection on normal-only training data
+
+model:
+  name: patchcore
+  backbone: wide_resnet50_2   # feature extractor (frozen — never trained)
+  layers:                     # which backbone layers to extract features from
+    - layer2                  # low-level spatial features
+    - layer3                  # high-level semantic features
+  coreset_sampling_ratio: 0.1 # keep 10% of patches in memory bank (memory vs accuracy tradeoff)
+                              # 1.0 = keep everything (best accuracy, most RAM)
+                              # 0.1 = 10% subsample (faster, slightly lower AUROC)
+  num_neighbors: 9            # k-NN neighbors used for anomaly scoring
+
+training:
+  # PatchCore has NO gradient-based training.
+  # "Training" = one forward pass through all normal images to build memory bank.
+  # This takes minutes, not hours. No epochs, no LR, no loss function.
+  batch_size: 16
+  num_workers: 4
+  image_size: 512
+  precision: 32               # PatchCore feature extraction runs in FP32
+
+  # anomalib handles the full training loop internally.
+  # These settings map directly to anomalib's PatchcoreConfig.
+
+data:
+  # anomalib expects normal-only training data.
+  # Our AnomalyDataset handles this automatically (normal_only=True for train split).
+  image_size: 512
+  center_crop: 448            # anomalib standard: center crop after resize
+
+evaluation:
+  # Metrics computed per category and averaged across all 15 MVTec categories.
+  metrics:
+    - image_auroc             # image-level anomaly detection
+    - pixel_auroc             # pixel-level localization quality
+  threshold_method: adaptive  # anomalib finds optimal threshold automatically
+
+
+checkpointing:
+  dirpath: checkpoints/anomaly/
+
+sagemaker:
+  instance_type: ml.g4dn.xlarge
+  instance_count: 1
+  volume_size_gb: 50
+  max_run_hours: 10            # PatchCore is fast — no gradient training
+  use_spot: false
+  spot_wait_hours: 1
