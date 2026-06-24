@@ -15,6 +15,9 @@ data/train/
 
 
 *.png
+!outputs/
+!outputs/predictions/
+!outputs/predictions/*.png
 *.log
 .zen 
 .zenml_artifacts

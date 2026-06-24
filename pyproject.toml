@@ -3,7 +3,7 @@ name = "nulldefect"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 dependencies = [
     "albumentations>=1.3.1",
     "anomalib>=1.0.0",
@@ -15,6 +15,7 @@ dependencies = [
     "great-expectations>=0.18.0",
     "ipykernel>=6.26.0",
     "kaggle>=2.0.0",
+    "loaderup",
     "mlflow>=2.9.0",
     "numpy<2.0",
     "onnxscript>=0.5.0",
@@ -42,3 +43,10 @@ dependencies = [
     "wandb>=0.16.0",
     "zenml[server]>=0.94.1",
 ]
+[tool.uv]
+environments = [
+  "sys_platform == 'linux' and platform_machine == 'x86_64' and python_full_version >= '3.12' and python_full_version < '3.13'"
+]
+
+[tool.uv.sources]
+loaderup = { url = "https://files.pythonhosted.org/packages/74/fc/033e6ded6bbfbfce2e4f49eedc51cb2084cccc6a58a78a7a1d0dfcffc85b/loaderup-0.1.1-py3-none-any.whl" }
