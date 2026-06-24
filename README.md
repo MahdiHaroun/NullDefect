@@ -29,7 +29,7 @@ Example combined visualizations produced by the ONNX inference endpoint:
 
 **Wood Hole**
 
-![ONNX wood hole prediction](outputs/predictions/predict_onnx_wood_test_hole_000_patch_0_0_20260403-182147_de99c2c0.png)
+![ONNX wood hole prediction](outputs/predictions/predict_onnx_wood_test_hole_000_patch_0_0_20260403-182919_fff76355.png)
 
 **Cable Cut Inner Insulation**
 
