@@ -23,9 +23,17 @@ The codebase currently implements three complementary model paths:
 
 Example combined visualizations produced by the ONNX inference endpoint:
 
-| Screw scratch head | Wood hole | Cable cut inner insulation |
-|---|---|---|
-| ![ONNX screw scratch head prediction](outputs/predictions/predict_onnx_screw_test_scratch_head_001_patch_448_448_20260403-183208_656d02c8.png) | ![ONNX wood hole prediction](outputs/predictions/predict_onnx_wood_test_hole_000_patch_0_0_20260403-182147_de99c2c0.png) | ![ONNX cable cut inner insulation prediction](outputs/predictions/predict_onnx_cable_test_cut_inner_insulation_000_patch_448_448_20260403-183804_15e2afbd.png) |
+**Screw Scratch Head**
+
+![ONNX screw scratch head prediction](outputs/predictions/predict_onnx_screw_test_scratch_head_001_patch_448_448_20260403-183208_656d02c8.png)
+
+**Wood Hole**
+
+![ONNX wood hole prediction](outputs/predictions/predict_onnx_wood_test_hole_000_patch_0_0_20260403-182147_de99c2c0.png)
+
+**Cable Cut Inner Insulation**
+
+![ONNX cable cut inner insulation prediction](outputs/predictions/predict_onnx_cable_test_cut_inner_insulation_000_patch_448_448_20260403-183804_15e2afbd.png)
 
 ## Repository Layout
 
